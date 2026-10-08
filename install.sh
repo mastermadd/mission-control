@@ -6,7 +6,14 @@ INSTALL_DIR=/opt/mission-control
 if [[ $EUID -ne 0 ]]; then echo 'Run: curl -fsSL https://raw.githubusercontent.com/mastermadd/mission-control/main/install.sh | sudo bash'; exit 1; fi
 if [[ -e "$INSTALL_DIR/config/config.json" ]]; then echo 'Already installed. Run: sudo mission-control update'; exit 0; fi
 . /etc/os-release
-if [[ "$ID" != debian && "$ID" != ubuntu ]]; then echo 'Supported hosts: Debian 12/13 or Ubuntu 24.04. Use a dedicated VM.'; exit 1; fi
+docker_repository(){
+ case "$1" in
+  debian|ubuntu) [[ -n "$2" ]] || return 1; printf '%s %s\n' "$1" "$2";;
+  kali) printf 'debian trixie\n';;
+  *) return 1;;
+ esac
+}
+if ! read -r DOCKER_DISTRO DOCKER_CODENAME < <(docker_repository "$ID" "${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"); then echo 'Supported hosts: Debian, Ubuntu or Kali Linux.'; exit 1; fi
 apt-get update -qq
 apt-get install -y ca-certificates curl git python3 >/dev/null
 exec 3<>/dev/tty
@@ -22,12 +29,13 @@ read -r -s -p 'Repeat password: ' CONFIRM_PASSWORD <&3; printf '\n' >&3
 if [[ ${#ADMIN_PASSWORD} -lt 12 || ${#ADMIN_PASSWORD} -gt 1024 || "$ADMIN_PASSWORD" != "$CONFIRM_PASSWORD" ]]; then echo 'Passwords must match and be at least 12 characters.'; exit 1; fi
 if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; then
  install -m 0755 -d /etc/apt/keyrings
- curl -fsSL "https://download.docker.com/linux/$ID/gpg" -o /etc/apt/keyrings/docker.asc
+ curl -fsSL "https://download.docker.com/linux/$DOCKER_DISTRO/gpg" -o /etc/apt/keyrings/docker.asc
  chmod a+r /etc/apt/keyrings/docker.asc
- printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/%s %s stable\n' "$(dpkg --print-architecture)" "$ID" "$VERSION_CODENAME" > /etc/apt/sources.list.d/mission-control-docker.list
+ printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/%s %s stable\n' "$(dpkg --print-architecture)" "$DOCKER_DISTRO" "$DOCKER_CODENAME" > /etc/apt/sources.list.d/mission-control-docker.list
  apt-get update -qq
  if command -v docker >/dev/null; then apt-get install -y docker-compose-plugin; else apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; fi
 fi
+if ! docker info >/dev/null 2>&1; then systemctl enable --now docker; fi
 docker info >/dev/null
 install -m 0755 -d "$INSTALL_DIR" "$INSTALL_DIR/releases"
 install -m 0700 -d "$INSTALL_DIR/backups"

@@ -4,7 +4,7 @@ The existing Mission Control dashboard, with a local Node.js backend and SQLite 
 
 ## Install
 
-Use a dedicated Debian 12/13 or Ubuntu 24.04 VM, with outbound internet access for GitHub, Docker packages and the Node container image. Docker must be supported by the host; a Proxmox VM is simpler than a restricted LXC. The installer supports AMD64 and ARM64 through the Node image.
+Use a dedicated Debian 12/13, Ubuntu 24.04, or Kali Linux VM, with outbound internet access for GitHub, Docker packages and the Node container image. Docker must be supported by the host; a Proxmox VM is simpler than a restricted LXC. The installer supports AMD64 and ARM64 through the Node image.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mastermadd/mission-control/main/install.sh | sudo bash
@@ -12,7 +12,7 @@ curl -fsSL https://raw.githubusercontent.com/mastermadd/mission-control/main/ins
 
 The installer reads prompts from the terminal even when piped into Bash. It asks for an existing private LAN IPv4 address, dashboard URL, admin username/password. Use the real dashboard URL you will browse: login and writes enforce that origin. The default is `http://<LAN-IP>:8080`. Use an internal HTTPS reverse proxy with a trusted certificate for encrypted browser connections; set that HTTPS origin during installation. Nothing modifies your router, DNS, Pangolin resources or public port forwards.
 
-Docker and Compose are installed from Docker's official repository if missing. The application is built and tested locally from one exact Git commit before startup. Data stays under `/opt/mission-control/data`; configuration, password hash and encryption key under `/opt/mission-control/config`. Secrets are never uploaded to GitHub. The admin password is hashed with scrypt; integration credentials use AES-GCM. Cookie sessions are HttpOnly and SameSite=Strict, with Secure on HTTPS. Incoming ChatGPT identity headers are ignored.
+Docker and Compose are installed from Docker's official repository if missing. Kali uses Docker's Debian `trixie` repository, following [Kali's Docker installation documentation](https://www.kali.org/docs/containers/installing-docker-on-kali/). An existing working Docker/Compose installation is reused; the Docker service is started if needed. The application is built and tested locally from one exact Git commit before startup. Data stays under `/opt/mission-control/data`; configuration, password hash and encryption key under `/opt/mission-control/config`. Secrets are never uploaded to GitHub. The admin password is hashed with scrypt; integration credentials use AES-GCM. Cookie sessions are HttpOnly and SameSite=Strict, with Secure on HTTPS. Incoming ChatGPT identity headers are ignored.
 
 Internal HTTP and HTTPS resources can be reached using IP addresses, DNS names, IPv6 addresses and custom ports. Existing loopback and metadata-service protections remain in place. No endpoint allowlist is required. HTTPS certificate verification remains enabled. Existing installations may retain an unused `allowedTargets` field in their configuration; it is ignored, and no configuration edits or credential changes are needed. Controllers with a private certificate authority need their CA trusted by the application container; never disable verification.
 
