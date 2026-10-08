@@ -55,24 +55,14 @@ bash -n install.sh mission-control
 
 Docker runs as the non-root `node` user with a read-only application filesystem and dropped capabilities. Persistent directories belong to UID 1000. `/healthz` is a minimal health endpoint; application and API access requires a local session. The server polls integrations every 60 seconds, including while nobody has the UI open. Existing demo-only agent chat/dispatch remains unfinished; migration does not invent new agent functionality.
 
-## MikroTik RouterOS connector
-
-Select **MikroTik RouterOS** in Integrations. RouterOS 7.15.1 supports the required REST endpoints. Edit an existing generic MikroTik integration to change its connector; leaving credentials blank preserves the encrypted saved username and password. Select the customer and use the router HTTP(S) base URL, optionally ending in `/rest`. The connector selects Direct mode and Basic authentication automatically.
-
-Use `www-ssl` with a trusted certificate matching the endpoint hostname, normally port 443. The binary `api`/`api-ssl` ports 8728/8729 are not compatible with REST. Allow the dashboard server through the router firewall and the web service's address restrictions. HTTPS verification stays enabled; private certificate authorities must be trusted in the application container. HTTP works on RouterOS 7.9+ for controlled internal testing but does not encrypt credentials.
-
-Create a dedicated local account in a custom group with `read,rest-api` policies, restricting it to the dashboard host/network. No write, sensitive, reboot or configuration permissions are required. Enter its password only in the dashboard settings.
-
-The connection test reads `/rest/system/identity`, `/rest/system/resource`, and `/rest/interface`. All three must succeed and return valid JSON. These are the only allowed router operations, all GET requests. Polling runs on the backend every 60 seconds, with timeouts and a lease preventing overlap. Only whitelisted identity, model, version, uptime, CPU/memory and interface state/byte-counter fields reach the browser. Traffic counters are cumulative bytes, not instantaneous rates. No client records, addresses, MAC addresses, certificates or configuration secrets are exposed.
-
-The router appears as an integration-managed asset in Overview, Customers, Infrastructure and Network. Its interface table appears in Network and View data. Cached snapshots remain visible and marked stale on errors, and a stale telemetry alert appears. Editing connection settings resets the cache; deleting the integration or its linked customer removes it.
-
 ## MikroTik native API
 
-Select **MikroTik Native API** to monitor through RouterOS's binary API, without enabling WebFig/REST. Choose **Plain TCP** for the internal `api` service and enter `tcp://<router-IP>:8728`, or choose **TLS** for `api-ssl` and enter `tls://<router-hostname>:8729`. Custom ports and IPv6 are supported. HTTP remains supported by the separate **MikroTik RouterOS REST** connector. The native protocol is TCP, not HTTP.
+Select **MikroTik Native API** to monitor through RouterOS's binary API, without enabling WebFig/REST. Choose **Plain TCP** for the internal `api` service and enter `tcp://<router-IP>:8728`, or choose **TLS** for `api-ssl` and enter `tls://<router-hostname>:8729`. Custom ports and IPv6 are supported. Other HTTP/HTTPS integrations remain supported. MikroTik uses its native TCP protocol only.
 
 Enable the chosen service in RouterOS **IP → Services** and allow the dashboard server through its address restrictions and firewall. Use a dedicated local account with a custom group containing `read,api` policies. Changing an existing integration to the native connector preserves its saved credentials when the fields are blank. Plain TCP transmits the account credentials without encryption; API-SSL verifies the server certificate and hostname. Certificate-less anonymous-DH API-SSL is not supported.
 
 A poll opens one backend socket, uses the RouterOS 6.43+ login flow, runs `/system/identity/print`, `/system/resource/print` and `/interface/print` with explicit property lists, then closes it. RouterOS 7.15.1 is supported. No write/configuration/reboot commands are allowed. Timeouts, bounded response parsing, encrypted credential storage, 60-second polling, stale cache handling and customer-linked asset rules apply to both MikroTik connectors. Native connections resolve DNS on the server and reject loopback/metadata destinations before opening the socket. HTTP Pangolin resource tokens cannot be applied to this native TCP connection; connect to an internal address reachable from the dashboard server.
 
 Native API tests generate a disposable TLS identity in memory. No TLS private keys or runtime credentials are committed to the repository.
+
+Saved entries from the removed MikroTik REST connector are not polled. Open Edit to switch them to MikroTik Native API, confirm the API address/port and save; blank credential fields retain their existing encrypted values. Entries can also be removed directly.
