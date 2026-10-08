@@ -1,0 +1,7 @@
+node_modules/
+api.js
+.env
+config/
+data/
+backups/
+*.tar.gz

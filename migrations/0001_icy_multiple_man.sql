@@ -1,0 +1,1 @@
+ALTER TABLE `integrations` ADD `proxy_auth` integer DEFAULT 0 NOT NULL;

@@ -1,0 +1,2 @@
+import fs from 'node:fs';import ts from 'typescript';
+const source=fs.readFileSync(new URL('./api.ts',import.meta.url),'utf8');const {outputText,diagnostics}=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext},reportDiagnostics:true});if(diagnostics?.length)throw Error('API compilation failed');fs.writeFileSync(new URL('./api.js',import.meta.url),outputText);

@@ -1,0 +1,20 @@
+services:
+  mission-control:
+    image: ${MISSION_IMAGE:?Set MISSION_IMAGE}
+    restart: unless-stopped
+    ports:
+      - "${MISSION_BIND_IP:?Set a LAN address}:${MISSION_PORT:-8080}:8080"
+    volumes:
+      - ./data:/data
+      - ./config:/config:ro
+    environment:
+      CONFIG_FILE: /config/config.json
+      DATABASE_FILE: /data/mission.sqlite
+      MISSION_VERSION: ${MISSION_VERSION:-unknown}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
