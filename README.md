@@ -19,7 +19,7 @@ Internal HTTP and HTTPS resources can be reached using IP addresses, DNS names, 
 ## Move your hosted records
 
 1. In the current ChatGPT dashboard choose **Export report**.
-2. Sign in to the internal dashboard and choose **Import hosted workspace** at the bottom right.
+2. Sign in to the internal dashboard and open the top-right user menu and choose **Import workspace**.
 3. Select the JSON export. Import is restricted to an empty workspace and drops unknown fields.
 4. Customers, manual assets, alerts, tasks, activity and integration settings are imported. Credentials, cookies and live caches are deliberately excluded. Edit each integration and enter its credentials on your internal dashboard.
 5. Change integration URLs to their internal addresses and test them. For Pangolin itself, use its actual Integration API host/port, not the dashboard port. Keep UniFi's valid HTTPS certificate verification enabled.
@@ -54,3 +54,15 @@ bash -n install.sh mission-control
 ```
 
 Docker runs as the non-root `node` user with a read-only application filesystem and dropped capabilities. Persistent directories belong to UID 1000. `/healthz` is a minimal health endpoint; application and API access requires a local session. The server polls integrations every 60 seconds, including while nobody has the UI open. Existing demo-only agent chat/dispatch remains unfinished; migration does not invent new agent functionality.
+
+## MikroTik RouterOS connector
+
+Select **MikroTik RouterOS** in Integrations. RouterOS 7.15.1 supports the required REST endpoints. Edit an existing generic MikroTik integration to change its connector; leaving credentials blank preserves the encrypted saved username and password. Select the customer and use the router HTTP(S) base URL, optionally ending in `/rest`. The connector selects Direct mode and Basic authentication automatically.
+
+Use `www-ssl` with a trusted certificate matching the endpoint hostname, normally port 443. The binary `api`/`api-ssl` ports 8728/8729 are not compatible with REST. Allow the dashboard server through the router firewall and the web service's address restrictions. HTTPS verification stays enabled; private certificate authorities must be trusted in the application container. HTTP works on RouterOS 7.9+ for controlled internal testing but does not encrypt credentials.
+
+Create a dedicated local account in a custom group with `read,rest-api` policies, restricting it to the dashboard host/network. No write, sensitive, reboot or configuration permissions are required. Enter its password only in the dashboard settings.
+
+The connection test reads `/rest/system/identity`, `/rest/system/resource`, and `/rest/interface`. All three must succeed and return valid JSON. These are the only allowed router operations, all GET requests. Polling runs on the backend every 60 seconds, with timeouts and a lease preventing overlap. Only whitelisted identity, model, version, uptime, CPU/memory and interface state/byte-counter fields reach the browser. Traffic counters are cumulative bytes, not instantaneous rates. No client records, addresses, MAC addresses, certificates or configuration secrets are exposed.
+
+The router appears as an integration-managed asset in Overview, Customers, Infrastructure and Network. Its interface table appears in Network and View data. Cached snapshots remain visible and marked stale on errors, and a stale telemetry alert appears. Editing connection settings resets the cache; deleting the integration or its linked customer removes it.
