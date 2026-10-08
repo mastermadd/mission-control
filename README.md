@@ -79,4 +79,14 @@ The server appears as an integration-managed DNS asset in Overview, Customers, I
 
 ### Dedicated connectors only
 
-New integrations must use UniFi Classic Network, Pangolin Network, MikroTik Native API or AdGuard Home. Generic HTTP API and its bridge probe are removed. Existing generic entries keep their encrypted settings and customer links for conversion or removal, but no longer run connection tests or polls. Every future integration will get its own connector with explicit authentication, read endpoints and sanitized telemetry.
+New integrations must use UniFi Classic Network, Pangolin Network, MikroTik Native API, AdGuard Home or Pulse. Generic HTTP API and its bridge probe are removed. Existing generic entries keep their encrypted settings and customer links for conversion or removal, but no longer run connection tests or polls. Every future integration will get its own connector with explicit authentication, read endpoints and sanitized telemetry.
+
+### Pulse / Proxmox PVE
+
+Choose **Pulse · Proxmox PVE**, assign a customer and enter the Pulse web server URL (for example `http://pulse.internal:7655` or `https://pulse.example.com`), optionally ending in `/api`. In Pulse's API Access settings, create an API token limited to `monitoring:read`. Enter that **Pulse token**, not a Proxmox PVE token. The connector selects Direct and Bearer authentication automatically. Saved tokens are encrypted on the backend, and blank credential fields preserve them when editing. HTTP is supported internally; HTTPS certificate verification remains enabled. Optional Pangolin resource authentication remains separate.
+
+The successful test and every 60-second background poll read only `GET /api/state`. The connector supports legacy node/VM/container/storage arrays and the current unified resources format, filters unified inventory to PVE resources and returns only explicit inventory/metric/alert-summary fields. Raw platform configuration, addresses, histories, alert messages and authentication data are excluded from both the stored cache and frontend. Counts for active alerts cover the entire Pulse instance; resource inventory is PVE only. Missing metrics and negative unknown sentinels remain unknown. Powered-off workloads are stopped, not offline incidents.
+
+Overview, customer workspaces, infrastructure, Network and Alerts use the same cached snapshot. Each view shows the last successful poll; the data panel also shows Pulse's own update timestamp. Failed polls preserve prior data and mark it stale. Pulse upstream data older than two minutes (or without a valid update time) is marked stale even after a successful HTTP request. Concurrent polls use a database lease and configuration revision fencing; edits/deletes discard late results. Integration-managed assets can only be removed with their integration or linked customer. Limits: 8 MiB response, 2000 PVE resources, 200 displayed alert summaries, 750 KB sanitized cache, 10-second request timeout. No Pulse configuration changes, VM operations, agent actions or alert acknowledgements are implemented.
+
+API reference: https://github.com/rcourtman/Pulse/blob/main/docs/API.md
