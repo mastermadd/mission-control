@@ -71,7 +71,8 @@ test('Authenticated AdGuard flow upgrades generic settings, reuses encrypted cre
   try {
     const login=await request('/auth/login','POST',{username:'admin',password:'fixture-admin-password'});cookie=login.cookie.split(';')[0];
     await request('/api/customers','POST',{name:'School',type:'Education',contact:'IT'});
-    const saved=await request('/api/integrations','POST',{name:'DNS',connector:'generic',endpoint:'http://adguard.internal/control/status',mode:'direct',auth:'basic',credential:secret,customer:'School'});const id=saved.data.id;assert(id);
+    const id='legacy-dns',encrypted=await encrypt(secret,config.encryptionKey,'local-admin:'+id);
+    await app.db.prepare('INSERT INTO integrations (id,owner,connector,name,endpoint,mode,auth,customer,encrypted,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(id,'local-admin','generic','DNS','http://adguard.internal/control/status','direct','basic','School',encrypted,'Connected','now').run();
     const settings={name:'DNS',connector:'adguard',endpoint:'http://adguard.internal',mode:'direct',auth:'basic',customer:'School'};
     assert.equal((await request('/api/integrations/'+id,'PATCH',{...settings,auth:'bearer'})).status,400);
     assert.equal((await request('/api/integrations/'+id,'PATCH',settings)).status,200);

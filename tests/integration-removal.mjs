@@ -30,6 +30,23 @@ test('Integration deletion accepts empty/JSON bodies, deletes all connector cach
       assert.equal(await app.db.prepare('SELECT * FROM integrations WHERE id=?').bind(id).first(),null);
       assert.equal(await app.db.prepare('SELECT * FROM classic_cache WHERE id=?').bind(id).first(),null);
     }
+    await insert('generic-legacy','generic');
+    const before=await app.db.prepare('SELECT * FROM integrations WHERE id=?').bind('generic-legacy').first();
+    let probes=0;const originalFetch=globalThis.fetch;
+    globalThis.fetch=async(url,options)=>{if(String(url).startsWith('https://router.internal')){probes++;throw Error('Retired connector must never probe');}return originalFetch(url,options);};
+    try{
+      for(const action of ['test','poll']){
+        const disabled=await request('/api/integrations/generic-legacy/'+action,'POST','{}');
+        assert.equal(disabled.data.status,'Connector removed');assert.match(disabled.data.error,/dedicated connector/);
+      }
+      await app.pollAll();assert.equal(probes,0);
+      assert.deepEqual(await app.db.prepare('SELECT * FROM integrations WHERE id=?').bind('generic-legacy').first(),before);
+      const list=await request('/api/integrations');assert.equal(list.data.integrations[0].status,'Connector removed');
+      assert(!JSON.stringify(list.data).includes(secret.password));
+      for(const connector of ['generic',undefined])assert.equal((await request('/api/integrations','POST',JSON.stringify({name:'Unsupported',connector,mode:'direct',auth:'basic',endpoint:'https://router.internal',credential:secret}))).status,400);
+      assert.equal((await request('/api/integrations/generic-legacy','PATCH',JSON.stringify({name:'Unsupported',connector:'generic',mode:'direct',auth:'basic',endpoint:'https://router.internal'}))).status,400);
+    }finally{globalThis.fetch=originalFetch;}
+    assert.equal((await request('/api/integrations/generic-legacy','DELETE')).status,200);
     await insert('legacy','mikrotik');
     const list=await request('/api/integrations');assert.equal(list.data.integrations[0].status,'Connector removed');
     const skipped=await request('/api/integrations/legacy/poll','POST','{}');assert.match(skipped.data.error,/REST has been removed/);
@@ -62,9 +79,25 @@ test('MikroTik settings expose only the native connector and convert legacy HTTP
   const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
   assert(!source.includes('<option value="mikrotik"'));
   assert(source.includes('<option value="mikrotik-api"'));
-  const functions=['selectConnector','selectNativeTransport','integrationFields'].map(name=>source.split('\n').find(line=>line.startsWith('function '+name+'('))).join('\n');
+  const functions=['selectConnector','selectNativeTransport','integrationFields','telemetryConnector'].map(name=>source.split('\n').find(line=>line.startsWith('function '+name+'('))).join('\n');
   const nodes=new Map(),$=selector=>{if(!nodes.has(selector))nodes.set(selector,{value:'',style:{}});return nodes.get(selector);};
   $('#f-connector').value='mikrotik-api';$('#f-endpoint').value='https://router.internal/rest';$('#f-customer').value='School';
   const context=vm.createContext({$,document:{querySelector:$},URL});vm.runInContext(functions+'\nselectConnector();',context);
   assert.equal($('#f-endpoint').value,'tcp://router.internal:8728');assert.equal($('#f-customer').value,'School');assert.equal($('#f-auth').value,'basic');
+});
+
+
+test('Add/edit integration requires a dedicated connector and foreground polling skips retired records',async()=>{
+  const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+  const functions=['configure','integrationFields','telemetryConnector','pollIntegrations'].map(name=>source.split('\n').find(line=>line.startsWith('function '+name+'(')||line.startsWith('async function '+name+'('))).join('\n');
+  const nodes=new Map(),$=selector=>{if(!nodes.has(selector))nodes.set(selector,{value:'',style:{}});return nodes.get(selector);};
+  let html='',requests=[];
+  const context=vm.createContext({$,document:{querySelector:$},vault:[{id:'old',connector:'generic',endpoint:'http://dns.internal',name:'DNS',customer:'School'},{id:'dns',connector:'adguard'}],
+    field:()=>'',secretField:()=>'',customerSelect:value=>'<select>'+value+'</select>',button:()=>'',showModal:value=>html=value,
+    backendReady:true,pollRunning:false,workspaceMutation:false,classicData:{},reloadDashboard:async()=>{},refreshLiveViews:()=>{},api:async path=>{requests.push(path);return {status:'Connected',lastSuccess:'now'};}});
+  vm.runInContext(functions,context);vm.runInContext("configure('old')",context);
+  assert(!html.includes('<option value="generic"'));assert(!html.includes('id="bridge-fields"'));assert(!html.includes('id="header-fields"'));
+  assert.match(html,/<select id="f-connector"[^>]*required/);assert.match(html,/<option value="" disabled selected>/);assert(html.includes('School'));
+  for(const connector of ['unifi-classic','pangolin','mikrotik-api','adguard'])assert(html.includes('<option value="'+connector+'"'));
+  await vm.runInContext('pollIntegrations()',context);assert.deepEqual(requests,['integrations/dns/poll']);
 });

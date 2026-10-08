@@ -146,8 +146,8 @@ test('Authenticated native API flow preserves saved credentials, polls automatic
   try {
     const login=await request('/auth/login','POST',{username:'admin',password:'fixture-admin-password'});cookie=login.cookie.split(';')[0];
     await request('/api/customers','POST',{name:'School',type:'Education',contact:'IT'});
-    const saved=await request('/api/integrations','POST',{name:'Router',connector:'generic',endpoint:'https://router.internal',mode:'direct',auth:'basic',credential:secret,customer:'School'});
-    const id=saved.data.id;assert(id);
+    const id='legacy-router',encrypted=await encrypt(secret,config.encryptionKey,'local-admin:'+id);
+    await app.db.prepare('INSERT INTO integrations (id,owner,connector,name,endpoint,mode,auth,customer,encrypted,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(id,'local-admin','generic','Router','https://router.internal','direct','basic','School',encrypted,'Connected','now').run();
     const settings={name:'Router',connector:'mikrotik-api',endpoint:'tcp://192.168.5.250:'+router.port,mode:'direct',auth:'basic',customer:'School'};
     assert.equal((await request('/api/integrations/'+id,'PATCH',{...settings,proxyAuth:true})).status,400);
     assert.equal((await request('/api/integrations/'+id,'PATCH',settings)).status,200);
