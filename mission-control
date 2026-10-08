@@ -13,10 +13,6 @@ case ${1:-help} in
  status) compose ps; printf 'Revision: '; basename "$(readlink -f "$ROOT/current")";;
  logs) compose logs --tail=100;;
  backup) compose stop >/dev/null; trap 'compose up -d >/dev/null' EXIT; backup_stopped;;
- targets)
-  echo 'Enter the entire allowed host:port list (comma-separated).'; read -r TARGETS </dev/tty
-  printf '%s' "$TARGETS" | python3 -c 'import json,sys,os; p="/opt/mission-control/config/config.json"; c=json.load(open(p)); c["allowedTargets"]=sys.stdin.read(); tmp=p+".new"; f=open(tmp,"w"); json.dump(c,f,indent=2); f.close(); os.chmod(tmp,0o600); os.chown(tmp,1000,1000); os.replace(tmp,p)'
-  compose restart;;
  update)
   WORK=$(mktemp -d); NEED_RESTART=0; trap 'if [[ $NEED_RESTART == 1 ]]; then compose up -d >/dev/null || true; fi; rm -rf "$WORK"' EXIT
   git clone --quiet --depth 1 "https://github.com/$REPOSITORY.git" "$WORK/source"
@@ -61,5 +57,5 @@ case ${1:-help} in
   ln -s "$OLD" "$ROOT/current.new"; mv -Tf "$ROOT/current.new" "$ROOT/current"
   install -m 0755 "$OLD/mission-control" /usr/local/bin/mission-control
   echo "Restored previous release. Backup of the replaced state: $SAFETY";;
- *) echo 'Usage: sudo mission-control {status|logs|update|backup|rollback|targets}';;
+ *) echo 'Usage: sudo mission-control {status|logs|update|backup|rollback}';;
 esac

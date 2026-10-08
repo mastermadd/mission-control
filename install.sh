@@ -20,7 +20,6 @@ ADMIN_USER=${ADMIN_USER:-admin}
 read -r -s -p 'Admin password (12+ characters): ' ADMIN_PASSWORD <&3; printf '\n' >&3
 read -r -s -p 'Repeat password: ' CONFIRM_PASSWORD <&3; printf '\n' >&3
 if [[ ${#ADMIN_PASSWORD} -lt 12 || ${#ADMIN_PASSWORD} -gt 1024 || "$ADMIN_PASSWORD" != "$CONFIRM_PASSWORD" ]]; then echo 'Passwords must match and be at least 12 characters.'; exit 1; fi
-read -r -p 'Allowed API hosts and ports, comma-separated (example 192.168.5.3:3003,unifi.jdln.co.za:8443): ' ALLOWED_TARGETS <&3
 if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; then
  install -m 0755 -d /etc/apt/keyrings
  curl -fsSL "https://download.docker.com/linux/$ID/gpg" -o /etc/apt/keyrings/docker.asc
@@ -40,7 +39,7 @@ RELEASE="$INSTALL_DIR/releases/$REVISION"
 cp -a "$WORK/source" "$RELEASE"
 IMAGE="jdln-mission-control:$REVISION"
 docker build --pull -t "$IMAGE" "$RELEASE"
-printf '%s\0' "$ADMIN_USER" "$ADMIN_PASSWORD" "$ORIGIN" "$ALLOWED_TARGETS" | python3 -c 'import sys,json; a=sys.stdin.buffer.read().decode().split("\0"); print(json.dumps(dict(username=a[0],password=a[1],origin=a[2],allowedTargets=a[3])))' | docker run --rm -i -v "$INSTALL_DIR/config:/config" "$IMAGE" node provision.mjs
+printf '%s\0' "$ADMIN_USER" "$ADMIN_PASSWORD" "$ORIGIN" | python3 -c 'import sys,json; a=sys.stdin.buffer.read().decode().split("\0"); print(json.dumps(dict(username=a[0],password=a[1],origin=a[2])))' | docker run --rm -i -v "$INSTALL_DIR/config:/config" "$IMAGE" node provision.mjs
 unset ADMIN_PASSWORD CONFIRM_PASSWORD
 printf 'MISSION_IMAGE=%s\nMISSION_VERSION=%s\nMISSION_BIND_IP=%s\nMISSION_PORT=8080\n' "$IMAGE" "$REVISION" "$BIND_IP" > "$INSTALL_DIR/.env"
 cp "$RELEASE/compose.yaml" "$INSTALL_DIR/compose.yaml"

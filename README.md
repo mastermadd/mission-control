@@ -10,11 +10,11 @@ Use a dedicated Debian 12/13 or Ubuntu 24.04 VM, with outbound internet access f
 curl -fsSL https://raw.githubusercontent.com/mastermadd/mission-control/main/install.sh | sudo bash
 ```
 
-The installer reads prompts from the terminal even when piped into Bash. It asks for an existing private LAN IPv4 address, dashboard URL, admin username/password, and an exact API host:port allowlist. Use the real dashboard URL you will browse: login and writes enforce that origin. The default is `http://<LAN-IP>:8080`. Use an internal HTTPS reverse proxy with a trusted certificate for encrypted browser connections; set that HTTPS origin during installation. Nothing modifies your router, DNS, Pangolin resources or public port forwards.
+The installer reads prompts from the terminal even when piped into Bash. It asks for an existing private LAN IPv4 address, dashboard URL, admin username/password. Use the real dashboard URL you will browse: login and writes enforce that origin. The default is `http://<LAN-IP>:8080`. Use an internal HTTPS reverse proxy with a trusted certificate for encrypted browser connections; set that HTTPS origin during installation. Nothing modifies your router, DNS, Pangolin resources or public port forwards.
 
 Docker and Compose are installed from Docker's official repository if missing. The application is built and tested locally from one exact Git commit before startup. Data stays under `/opt/mission-control/data`; configuration, password hash and encryption key under `/opt/mission-control/config`. Secrets are never uploaded to GitHub. The admin password is hashed with scrypt; integration credentials use AES-GCM. Cookie sessions are HttpOnly and SameSite=Strict, with Secure on HTTPS. Incoming ChatGPT identity headers are ignored.
 
-Only approved endpoints can be used. Example allowlist: `192.168.5.3:3003,unifi.jdln.co.za:8443`. HTTP may be used for explicitly approved internal endpoints; HTTPS verification remains enabled. Controllers with a private certificate authority need their CA trusted by the application container; never disable verification.
+Internal HTTP and HTTPS resources can be reached using IP addresses, DNS names, IPv6 addresses and custom ports. Existing loopback and metadata-service protections remain in place. No endpoint allowlist is required. HTTPS certificate verification remains enabled. Existing installations may retain an unused `allowedTargets` field in their configuration; it is ignored, and no configuration edits or credential changes are needed. Controllers with a private certificate authority need their CA trusted by the application container; never disable verification.
 
 ## Move your hosted records
 
@@ -22,7 +22,7 @@ Only approved endpoints can be used. Example allowlist: `192.168.5.3:3003,unifi.
 2. Sign in to the internal dashboard and choose **Import hosted workspace** at the bottom right.
 3. Select the JSON export. Import is restricted to an empty workspace and drops unknown fields.
 4. Customers, manual assets, alerts, tasks, activity and integration settings are imported. Credentials, cookies and live caches are deliberately excluded. Edit each integration and enter its credentials on your internal dashboard.
-5. Change integration URLs to their approved internal addresses and test them. For Pangolin itself, use its actual Integration API host/port, not the dashboard port. Keep UniFi's valid HTTPS certificate verification enabled.
+5. Change integration URLs to their internal addresses and test them. For Pangolin itself, use its actual Integration API host/port, not the dashboard port. Keep UniFi's valid HTTPS certificate verification enabled.
 
 Keep using the hosted site until you verify the internal installation and imported records. The installer does not delete or change the hosted site. No live customer data is shipped in this repository.
 
@@ -33,7 +33,6 @@ sudo mission-control status
 sudo mission-control update
 sudo mission-control backup
 sudo mission-control rollback
-sudo mission-control targets
 sudo mission-control logs
 ```
 
