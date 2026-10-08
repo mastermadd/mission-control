@@ -19,4 +19,11 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: bash -n install.sh mission-control
-      - run: docker build -t mission-control:test .
+      - name: Build with restrictive installer permissions
+        run: |
+          context=$(mktemp -d)
+          git archive HEAD | tar -x -C "$context"
+          chmod -R go-rwx "$context"
+          docker build -t mission-control:test "$context"
+      - name: Provision and start the non-root production image
+        run: bash tests/container-smoke.sh mission-control:test

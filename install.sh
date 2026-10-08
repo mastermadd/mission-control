@@ -44,7 +44,7 @@ WORK=$(mktemp -d); trap 'rm -rf "$WORK"; unset ADMIN_PASSWORD CONFIRM_PASSWORD' 
 git clone --quiet --depth 1 "https://github.com/$REPOSITORY.git" "$WORK/source"
 REVISION=$(git -C "$WORK/source" rev-parse HEAD)
 RELEASE="$INSTALL_DIR/releases/$REVISION"
-cp -a "$WORK/source" "$RELEASE"
+if [[ ! -d "$RELEASE" ]]; then cp -a "$WORK/source" "$RELEASE"; fi
 IMAGE="jdln-mission-control:$REVISION"
 docker build --pull -t "$IMAGE" "$RELEASE"
 printf '%s\0' "$ADMIN_USER" "$ADMIN_PASSWORD" "$ORIGIN" | python3 -c 'import sys,json; a=sys.stdin.buffer.read().decode().split("\0"); print(json.dumps(dict(username=a[0],password=a[1],origin=a[2])))' | docker run --rm -i -v "$INSTALL_DIR/config:/config" "$IMAGE" node provision.mjs
