@@ -66,3 +66,13 @@ A poll opens one backend socket, uses the RouterOS 6.43+ login flow, runs `/syst
 Native API tests generate a disposable TLS identity in memory. No TLS private keys or runtime credentials are committed to the repository.
 
 Saved entries from the removed MikroTik REST connector are not polled. Open Edit to switch them to MikroTik Native API, confirm the API address/port and save; blank credential fields retain their existing encrypted values. Entries can also be removed directly.
+
+## AdGuard Home connector
+
+Choose **AdGuard Home** in Integrations, assign the customer and enter its web interface URL, optionally ending in `/control`. Internal HTTP and HTTPS are supported, including custom web ports. Use the web-interface username and password; the connector automatically chooses Direct and Basic authentication. Changing an existing generic AdGuard integration preserves its encrypted saved credentials when the fields are blank. HTTPS certificate verification remains enabled. If the service is protected by Pangolin HTTP resource authentication, enter that resource token separately.
+
+A connection test must read both `GET /control/status` and `GET /control/stats` successfully. The backend allows these two read endpoints only; it cannot change protection, filtering rules, DNS settings, reset statistics or fetch query logs. Authentication is stored encrypted and never returned to the frontend. AdGuard accounts can have broader permissions than these two reads; the connector itself restricts all its requests to GET status/statistics.
+
+Every 60 seconds the backend refreshes version, DNS running state, protection state, configured ports, web API start time (when reported), total queries, filtering-blocked queries, safe-browsing/parental-blocked totals, safe-search replacements and average processing time in milliseconds. Statistics represent AdGuard's configured reporting window, not the latest 60 seconds or necessarily today. Filtering percentage uses only filtering-blocked queries. Raw client/domain rankings, addresses, upstream details and browsing/query logs are not returned or cached. Older versions that omit DNS running state display Unknown rather than inventing a healthy/offline state.
+
+The server appears as an integration-managed DNS asset in Overview, Customers, Infrastructure and Network. Network and View data show its status/statistics; confirmed stopped DNS or disabled protection generates an alert. Failed polls retain the previous successful data and mark it stale. Polls have timeouts, a lease prevents overlap, and configuration revisions discard late writes after edits or deletion. Removing the integration or its customer removes cached data and the derived DNS asset.
