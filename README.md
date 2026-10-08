@@ -90,3 +90,7 @@ The successful test and every 60-second background poll read only `GET /api/stat
 Overview, customer workspaces, infrastructure, Network and Alerts use the same cached snapshot. Each view shows the last successful poll; the data panel also shows Pulse's own update timestamp. Failed polls preserve prior data and mark it stale. Pulse upstream data older than two minutes (or without a valid update time) is marked stale even after a successful HTTP request. Concurrent polls use a database lease and configuration revision fencing; edits/deletes discard late results. Integration-managed assets can only be removed with their integration or linked customer. Limits: 8 MiB response, 2000 PVE resources, 200 displayed alert summaries, 750 KB sanitized cache, 10-second request timeout. No Pulse configuration changes, VM operations, agent actions or alert acknowledgements are implemented.
 
 API reference: https://github.com/rcourtman/Pulse/blob/main/docs/API.md
+
+### UniFi alert policy
+
+Mission Control raises UniFi alerts only for adopted devices explicitly reported disconnected (`adopted: true`, `state: 0`) in a fresh successful snapshot. WAN, LAN, WLAN and other site subsystem health remains available in the data panel but does not generate alerts. Discovery/pending/unknown devices do not generate disconnection alerts. Failed or stale UniFi polls retain cached device states and display stale/error information in integration and inventory views without generating device or controller alerts.
