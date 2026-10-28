@@ -239,3 +239,15 @@ footer span:first-child { color: #a2ccd9; letter-spacing: 2px; }
 .table-wrap { max-width: 100%; overflow-x: auto; }
 @media (max-width: 1050px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 700px) { .pulse-row strong { overflow-wrap: anywhere; } }
+/* Alert follow-up actions. */
+.alert-copy { flex: 1; min-width: 0; }
+.alert-detail { margin-top: 10px; max-width: 720px; overflow-wrap: anywhere; }
+.alert-actions { margin-left: auto; display: flex; flex-direction: column; gap: 9px; align-items: stretch; flex-shrink: 0; min-width: 130px; }
+.alert-actions .btn { justify-content: center; }
+.alert-row .alert-actions .text-link { margin: 2px 0 0; font-size: 10px; }
+.acknowledged-row .alert-symbol { color: #93e1e9; border-color: #63e5ef33; background: #63e5ef0a; }
+.task-alert-source, .task-form-note { font-size: 11px; line-height: 1.8; }
+.task-form-note { margin-top: 14px; }
+.task-metadata { margin: 20px 0; font-size: 12px; line-height: 1.9; }
+.task-description { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.9; border-left: 2px solid #5494a8; padding: 12px 15px; margin: 20px 0; background: #10283a55; }
+@media (max-width: 700px) { .alert-row { flex-wrap: wrap; } .alert-copy { min-width: 160px; } .alert-actions { width: 100%; margin: 8px 0 0 38px; min-width: 0; flex-direction: row; flex-wrap: wrap; } .alert-actions .text-link { flex-basis: 100%; text-align: left; } }

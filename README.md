@@ -101,3 +101,9 @@ Mission Control raises UniFi alerts only for adopted devices explicitly reported
 The header customer selector scopes Overview, Infrastructure, Network and Integrations, with a separate Standalone / unassigned view. The selection is a browser preference; it does not move records between customers. New assets and integrations inherit the selected customer. Manual assets can be edited from Details; discovered assets remain managed by their integration. New installations begin with an empty workspace and no invented health data.
 
 The overview shows inventory totals, current/stale integrations and device-focused alerts. Routine UniFi WAN, WLAN and LAN subsystem messages remain visible as context in the network view without creating incidents. The server keeps its existing 60-second background refresh, including when the browser is closed.
+
+## Alert follow-up
+
+Use **Acknowledge** on the Alerts tab to remove a reviewed alert from Open alerts and badge totals. The Acknowledged filter keeps its saved history, with a Reopen action. Acknowledgements survive automatic refresh and server restarts and do not change the monitored service.
+
+Use **Create task** to open a prefilled follow-up form with the alert title, source and details. The task is saved as Queued on the task board. Repeated clicks show the existing task, and task creation does not automatically acknowledge the alert. This update uses the existing workspace database; no schema migration is needed.

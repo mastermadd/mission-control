@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 test('MikroTik frontend joins customer inventory, network views and stale telemetry alerts', () => {
   const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
-  const names=['telemetryConnector','mikrotikAssets','mikrotikPanel','classicPanel','classicSummary','cacheStale','integrationAssets','operationAlerts','customerIntegrations'];
+  const names=['telemetryConnector','mikrotikAssets','mikrotikPanel','classicPanel','classicSummary','cacheStale','integrationAssets','clientAlertKey','applyAlertAcknowledgements','operationAlerts','customerIntegrations'];
   const functions=names.map(name=>source.split('\n').find(line=>line.startsWith('function '+name+'('))).join('\n');
   const integration={id:'router',name:'Router API',connector:'mikrotik-api',customer:'School',endpoint:'https://router.internal',status:'Connected'};
   const snapshot={lastSuccess:new Date().toISOString(),stale:false,data:{router:{name:'<Router>',model:'RB4011',version:'7.15.1',uptime:'1w2d',cpuLoad:15,memoryUsage:75},interfaces:[{name:'ether1',running:true,disabled:false,rxBytes:12345,txBytes:67890}]}};
