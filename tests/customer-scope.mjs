@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+test('Customer selection scopes manual/discovered assets and standalone integrations without changing records',()=>{
+ const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');const names=['scopeMatches','scopedIntegrations','inventory'];const functions=names.map(name=>source.split('\n').find(line=>line.startsWith('function '+name+'('))).join('\n');
+ const manual=[{name:'School PC',customer:'School'},{name:'Internal PC',customer:'Internal'}],derived=[{name:'Switch',customer:'School'},{name:'Router',customer:'Unassigned'}],vault=[{id:'u',customer:'School'},{id:'r',customer:''}];const ctx=vm.createContext({state:{assets:manual},vault,integrationAssets:()=>derived,customerScope:''});vm.runInContext(functions,ctx);
+ assert.equal(vm.runInContext('inventory().length',ctx),4);ctx.customerScope='School';assert.equal(vm.runInContext('inventory().length',ctx),2);assert.equal(vm.runInContext('scopedIntegrations()[0].id',ctx),'u');ctx.customerScope='__standalone';assert.equal(vm.runInContext('inventory()[0].name',ctx),'Router');assert.equal(vm.runInContext('scopedIntegrations()[0].id',ctx),'r');assert.equal(manual.length,2);assert.equal(vault.length,2);
+});
