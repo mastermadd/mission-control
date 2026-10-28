@@ -76,7 +76,7 @@ test('Pulse authenticated CRUD keeps credentials backend-only, polls in backgrou
 });
 
 test('Pulse frontend joins customer inventory/data/alerts and auto-selects token authentication without rebuilding forms',async()=>{
- const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');const names=['telemetryConnector','pulseAssets','pulsePanel','classicPanel','classicSummary','cacheStale','integrationAssets','clientAlertKey','applyAlertAcknowledgements','operationAlerts','customerIntegrations','selectConnector','integrationFields','customerStatus'];
+ const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');const names=['telemetryConnector','pulseAssets','pulsePanel','formatUptime','classicPanel','classicSummary','cacheStale','integrationAssets','clientAlertKey','applyAlertAcknowledgements','operationAlerts','customerIntegrations','selectConnector','integrationFields','customerStatus'];
  const functions=names.map(name=>source.split('\n').find(line=>line.startsWith('function '+name+'('))).join('\n');
  const i={id:'pulse',name:'School PVE',connector:'pulse',customer:'School',endpoint:'http://pulse.internal/api',status:'Connected'},snapshot={lastSuccess:new Date().toISOString(),stale:false,data:sanitizePulse(legacy())};
  const nodes=new Map(),$=s=>{if(!nodes.has(s))nodes.set(s,{value:'',style:{}});return nodes.get(s);};const context=vm.createContext({$,document:{querySelector:$},URL,Date,vault:[i],classicData:{pulse:snapshot},state:{alerts:[]},esc:v=>String(v??'').replaceAll('<','&lt;'),panel:(title,body)=>title+body,tag:v=>v});vm.runInContext(functions,context);
