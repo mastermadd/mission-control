@@ -1,3 +1,4 @@
+import {applyAlertAction,savedAcknowledgements} from './lib/alert-actions.js';
 import {pollPulse,pulseBase} from './lib/pulse.js';
 import {env} from './runtime.js';
 import {ApiError,endpoint,cleanSecret,encrypt,decrypt,safeIntegration} from './lib/security.js';
@@ -19,9 +20,10 @@ async function handler(req:Request){try{
  const path=new URL(req.url).pathname.replace(/^\/api\//,'').split('/');
  let body:any={};if(!['GET','HEAD'].includes(req.method)&&req.body){const text=await req.text();if(text.length>180000)throw new ApiError('Request too large.',413);if(text.trim()){try{body=JSON.parse(text)}catch{throw new ApiError('Invalid JSON.')}}}
  async function audit(action:string,name:string){await db.prepare('INSERT INTO audit (id,owner,action,name,time) VALUES (?,?,?,?,?)').bind(crypto.randomUUID(),owner,action,name,new Date().toISOString()).run()}
+ if(path[0]==='alerts'&&path[1]==='actions'&&req.method==='POST'){const result=await applyAlertAction(db,owner,body);if(result.changed&&result.audit&&result.name)await audit(result.audit,result.name);return response(result)}
  if(path[0]==='workspace'){
   if(req.method==='GET'){let r:any=await db.prepare('SELECT data FROM workspaces WHERE owner=?').bind(owner).first();return response({data:r?JSON.parse(r.data):null})}
-  if(req.method==='PUT'){let data:any={};for(let k of ['customers','assets','alerts','tasks','activity']){if(!Array.isArray(body[k])||body[k].length>500)throw new ApiError('Invalid workspace records.');data[k]=body[k]};await db.prepare('INSERT INTO workspaces (owner,data,updated_at) VALUES (?,?,?) ON CONFLICT(owner) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at').bind(owner,JSON.stringify(data),new Date().toISOString()).run();return response({saved:true})}
+  if(req.method==='PUT'){let data:any={};for(let k of ['customers','assets','alerts','tasks','activity']){if(!Array.isArray(body[k])||body[k].length>500)throw new ApiError('Invalid workspace records.');data[k]=body[k]};const current:any=await db.prepare('SELECT data FROM workspaces WHERE owner=?').bind(owner).first();data.alertAcknowledgements=savedAcknowledgements(current?JSON.parse(current.data):null);await db.prepare('INSERT INTO workspaces (owner,data,updated_at) VALUES (?,?,?) ON CONFLICT(owner) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at').bind(owner,JSON.stringify(data),new Date().toISOString()).run();return response({saved:true})}
  }
  if(path[0]==='assets'){
   if(req.method!=='DELETE')throw new ApiError('Method not allowed.',405);if(path[1]===undefined||body.integrationId||body.assetId)throw new ApiError('Integration-managed assets can only be removed by deleting their integration.',403);const workspace:any=await db.prepare('SELECT data FROM workspaces WHERE owner=?').bind(owner).first();if(!workspace)throw new ApiError('Workspace not found.',404);const data=JSON.parse(workspace.data);let name='Asset';

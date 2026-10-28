@@ -92,7 +92,7 @@ test('Authenticated AdGuard flow upgrades generic settings, reuses encrypted cre
 
 test('AdGuard frontend joins inventory, customer and network views, and distinguishes failed polls from DNS state',async()=>{
   const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
-  const names=['telemetryConnector','adguardAssets','adguardPanel','classicPanel','classicSummary','cacheStale','integrationAssets','operationAlerts','customerIntegrations','selectConnector','integrationFields'];
+  const names=['telemetryConnector','adguardAssets','adguardPanel','classicPanel','classicSummary','cacheStale','integrationAssets','clientAlertKey','applyAlertAcknowledgements','operationAlerts','customerIntegrations','selectConnector','integrationFields'];
   const functions=names.map(name=>source.split('\n').find(line=>line.startsWith('function '+name+'('))).join('\n');
   const integration={id:'dns',name:'<School DNS>',connector:'adguard',customer:'School',endpoint:'http://adguard.internal/control',status:'Connected'};
   const snapshot={lastSuccess:new Date().toISOString(),stale:false,data:await new AdGuardSession('http://adguard.internal',secret,{fetcher:fixture}).collect()};
